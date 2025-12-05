@@ -3,7 +3,7 @@ set(headers ${headers}
 	include/PCH.h
 	include/logger.h
 	include/Settings.h
-	include/Manager.h
+	include/PapyrusWrapper.h
 	include/Hooks.h
 	include/DynamicLoreboxes.h
 	include/ConfigLoader.h

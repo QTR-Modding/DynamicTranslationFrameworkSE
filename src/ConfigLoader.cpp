@@ -131,12 +131,8 @@ namespace DynamicLoreboxes {
             prov.native = nativeFunc;
 
             if (hasPapyrus) {
-                // For Papyrus, we store the class name in papyrusForm (as a placeholder)
-                // and the function name in papyrusFunc
-                // Note: Full Papyrus bridging would require looking up the script form
                 prov.papyrusFunc = funcName;
-                // papyrusForm would need proper resolution in a real Papyrus bridge
-                // For now, we leave it as nullptr (TODO marker)
+                prov.papyrusClass = papyrusClass;
             }
 
             // Register the provider

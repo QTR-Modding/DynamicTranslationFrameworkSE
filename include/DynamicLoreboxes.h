@@ -11,7 +11,7 @@ namespace DynamicLoreboxes {
         HMODULE hmod{};
         LoreFunc native{};
         // Papyrus
-        RE::TESForm* papyrusForm{};
+        std::string papyrusClass{};
         std::string papyrusFunc;
     };
 

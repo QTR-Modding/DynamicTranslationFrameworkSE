@@ -1,4 +1,5 @@
 #include "DynamicLoreboxes.h"
+#include "PapyrusWrapper.h"
 
 namespace DynamicLoreboxes {
     std::wstring InvokeProvider(const Provider& prov, RE::TESForm* item, RE::TESForm* owner) {
@@ -8,9 +9,8 @@ namespace DynamicLoreboxes {
                 const std::wstring result(sv);
                 return result;
             }
-            if (prov.papyrusForm && !prov.papyrusFunc.empty()) {
-                // TODO: Papyrus call bridge (client-side optional)
-                return std::wstring{};
+            if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
+                return PapyrusWrapper::GetSingleton()->GetDynamicLoreBoxText(prov.papyrusClass, prov.papyrusFunc, item, owner);
             }
         } catch (...) {
             logger::error("DynamicLoreboxes: provider invoke failed");

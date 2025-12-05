@@ -24,7 +24,7 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
             prov = it->second;
         }
     }
-    if (!(prov.native || (prov.papyrusForm && !prov.papyrusFunc.empty()))) return;
+    if (!(prov.native || (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()))) return;
 
     RE::TESForm* item = nullptr;
     RE::TESForm* owner = nullptr;
