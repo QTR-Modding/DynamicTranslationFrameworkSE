@@ -1,9 +1,6 @@
 #include "ConfigLoader.h"
-#include "logger.h"
-#include <filesystem>
-#include <fstream>
-#include <sstream>
 #include <rapidjson/error/en.h>
+#include "CLibUtilsQTR/FormReader.hpp"
 
 namespace DynamicLoreboxes {
 
@@ -36,7 +33,7 @@ namespace DynamicLoreboxes {
     }
 
     HMODULE ConfigLoader::GetOrLoadDLL(const std::string& dllName) {
-        std::lock_guard<std::mutex> lock(dllCacheMutex);
+        std::lock_guard lock(dllCacheMutex);
 
         auto it = dllCache.find(dllName);
         if (it != dllCache.end()) {
@@ -78,36 +75,6 @@ namespace DynamicLoreboxes {
         return reinterpret_cast<LoreFunc>(proc);
     }
 
-    RE::BGSKeyword* ConfigLoader::ResolveKeyword(const std::string& keywordStr) {
-        if (keywordStr.empty()) {
-            return nullptr;
-        }
-
-        // Try hex or decimal form ID first
-        if (StartsWithHex(keywordStr) || IsDecimalNumber(keywordStr)) {
-            RE::FormID formId = ParseFormID(keywordStr);
-            if (formId > 0) {
-                if (auto* form = RE::TESForm::LookupByID<RE::BGSKeyword>(formId)) {
-                    return form;
-                }
-            }
-        }
-
-        // Try the full FormReader resolution (handles plugin~formid and editor IDs)
-        if (const auto formId = FormReader::GetFormEditorIDFromString(keywordStr); formId > 0) {
-            if (auto* form = RE::TESForm::LookupByID<RE::BGSKeyword>(formId)) {
-                return form;
-            }
-        }
-
-        // Final fallback: direct editor ID lookup
-        if (auto* form = RE::TESForm::LookupByEditorID<RE::BGSKeyword>(keywordStr)) {
-            return form;
-        }
-
-        return nullptr;
-    }
-
     void ConfigLoader::ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath) {
         const auto& keywords = entry.keywords.get();
         const auto& dllName = entry.dll.get();
@@ -138,8 +105,7 @@ namespace DynamicLoreboxes {
             if (hmod) {
                 nativeFunc = ResolveDLLFunction(hmod, funcName);
                 if (!nativeFunc) {
-                    logger::error("ConfigLoader: Failed to resolve native function '{}' from DLL '{}' in '{}'",
-                        funcName, dllName, filePath);
+                    logger::error("ConfigLoader: Failed to resolve native function '{}' from DLL '{}' in '{}'", funcName, dllName, filePath);
                     // Continue anyway if papyrus is also specified
                     if (!hasPapyrus) {
                         return;
@@ -154,22 +120,9 @@ namespace DynamicLoreboxes {
 
         // Process keywords
         for (const auto& kwStr : keywords) {
-            auto* keyword = ResolveKeyword(kwStr);
-            if (!keyword) {
-                logger::warn("ConfigLoader: Failed to resolve keyword '{}' in '{}'", kwStr, filePath);
+            if (kwStr.empty()) {
+                logger::warn("ConfigLoader: Empty keyword string in entry from '{}', skipping", filePath);
                 continue;
-            }
-
-            // Get the keyword's editor ID or form name for the registry key
-            std::string keyName;
-            const char* editorId = keyword->GetFormEditorID();
-            if (editorId && editorId[0] != '\0') {
-                keyName = editorId;
-            } else {
-                // Fallback to hex form ID
-                std::stringstream ss;
-                ss << "0x" << std::hex << keyword->GetFormID();
-                keyName = ss.str();
             }
 
             // Create and populate the Provider
@@ -188,11 +141,11 @@ namespace DynamicLoreboxes {
 
             // Register the provider
             {
-                std::unique_lock<std::shared_mutex> lock(gProvMutex);
-                gProvidersByKey[keyName] = std::move(prov);
+                std::unique_lock lock(gProvMutex);
+                gProvidersByKey[kwStr] = std::move(prov);
             }
 
-            logger::info("ConfigLoader: Registered provider for keyword '{}'", keyName);
+            logger::info("ConfigLoader: Registered provider for keyword '{}'", kwStr);
         }
     }
 
@@ -206,13 +159,13 @@ namespace DynamicLoreboxes {
 
         // Clear existing registry for reload
         {
-            std::unique_lock<std::shared_mutex> lock(gProvMutex);
+            std::unique_lock lock(gProvMutex);
             gProvidersByKey.clear();
         }
 
-        // Iterate through the folder and subfolders
+        // Iterate through the folder only (non-recursive)
         std::error_code ec;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(kConfigFolder, ec)) {
+        for (const auto& entry : std::filesystem::directory_iterator(kConfigFolder, ec)) {
             if (ec) {
                 logger::error("ConfigLoader: Error iterating directory: {}", ec.message());
                 break;
@@ -237,7 +190,7 @@ namespace DynamicLoreboxes {
                 continue;
             }
 
-            std::string jsonStr((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+            std::string jsonStr((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
             ifs.close();
 
             // Parse JSON

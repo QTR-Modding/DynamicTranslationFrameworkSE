@@ -2,13 +2,11 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <shared_mutex>
 #include <mutex>
 #include <windows.h>
 #include <rapidjson/document.h>
 #include "boost/pfr/core.hpp"
 #include "CLibUtilsQTR/PresetHelpers/Config.hpp"
-#include "CLibUtilsQTR/FormReader.hpp"
 #include "DynamicLoreboxes.h"
 
 namespace DynamicLoreboxes {
@@ -36,7 +34,6 @@ namespace DynamicLoreboxes {
 
         static HMODULE GetOrLoadDLL(const std::string& dllName);
         static LoreFunc ResolveDLLFunction(HMODULE hmod, const std::string& funcName);
-        static RE::BGSKeyword* ResolveKeyword(const std::string& keywordStr);
         static void ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath);
     };
 

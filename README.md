@@ -42,7 +42,7 @@ Each JSON file can contain either a single provider object or an array of provid
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `keywords` | Array of strings | Yes | Array of keyword identifiers (EditorID, hex FormID like `"0x01234567"`, or decimal FormID) |
+| `keywords` | Array of strings | Yes | Array of keyword names |
 | `dll` | String | No | Name of the DLL exporting the native provider function |
 | `papyrus` | String | No | Papyrus class name |
 | `function` | String | Conditional | Function name (required if `dll` or `papyrus` is specified) |
