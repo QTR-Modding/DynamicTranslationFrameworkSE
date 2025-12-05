@@ -54,11 +54,10 @@ class PapyrusWrapper : public REX::Singleton<PapyrusWrapper> {
     }
 
 public:
-    std::wstring GetDynamicLoreBoxText(std::string_view functionClass, std::string_view functionName, RE::TESForm* item,
+    std::wstring GetDynamicTranslation(std::string_view functionClass, std::string_view functionName, RE::TESForm* item,
                                        RE::TESForm* owner) {
         auto callback = RE::make_smart<CallbackImpl>();
 
-        logger::info("Calling class '{}' function '{}' for dynamic lorebox.", functionClass, functionName);
 
         if (!CallFunction(functionClass, functionName, callback, item, owner)) {
             logger::error("Failed to dispatch Papyrus function {}.{}", functionClass, functionName);

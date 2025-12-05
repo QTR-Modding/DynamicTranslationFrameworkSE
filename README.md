@@ -26,10 +26,10 @@ Automatically imports:
 
 ## JSON Configuration
 
-DynamicLoreBoxes supports loading provider definitions from JSON files located under:
+DynamicTranslationFrameworkSE supports loading provider definitions from JSON files located under:
 
 ```
-Data/SKSE/Plugins/DynamicLoreBoxes/
+Data/SKSE/Plugins/DynamicTranslationFrameworkSE/
 ```
 
 The loader recursively scans this folder and all subfolders for `.json` files.

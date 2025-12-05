@@ -10,10 +10,10 @@ namespace DynamicTranslationSE {
                 return result;
             }
             if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
-                return PapyrusWrapper::GetSingleton()->GetDynamicLoreBoxText(prov.papyrusClass, prov.papyrusFunc, item, owner);
+                return PapyrusWrapper::GetSingleton()->GetDynamicTranslation(prov.papyrusClass, prov.papyrusFunc, item, owner);
             }
         } catch (...) {
-            logger::error("DynamicLoreboxes: provider invoke failed");
+            logger::error("DynamicTranslationFrameworkSE: provider invoke failed");
         }
         return std::wstring{};
     }
