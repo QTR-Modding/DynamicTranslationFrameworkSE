@@ -3,25 +3,6 @@
 #include "Utils.h"
 
 bool Hooks::Install() {
-    using namespace DynamicLoreboxes;
-    {
-        std::unique_lock lock(gProvMutex);
-        // for testing, lets add this dll (AlchemyOfTime.dll) to the gProvidersByKey with the keyword aot_kw and the
-        // function BuildLoreForHover
-        Provider prov{};
-        // we get the module handle of the current dll
-        if (prov.hmod = GetModuleHandleA("AlchemyOfTime.dll"); prov.hmod) {
-            prov.native = reinterpret_cast<LoreFunc>(GetProcAddress(prov.hmod, "BuildLoreForHover"));
-        } else {
-            logger::warn("DynamicLoreboxes: failed to get module handle for AlchemyOfTime.dll");
-        }
-        if (prov.native) {
-            gProvidersByKey.emplace("LoreBox_quantAoT", prov);
-        } else {
-            logger::warn("DynamicLoreboxes: failed to get BuildLoreForHover from AlchemyOfTime.dll");
-        }
-        logger::info("DynamicLoreboxes: registered test provider for keyword {}", "LoreBox_quantAoT");
-    }
     return InstallTranslatorVtableHook();
 }
 
