@@ -48,7 +48,7 @@ namespace DynamicTranslationSE {
     }
 
     void ConfigLoader::ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath) {
-        const auto& keywords = entry.strings.get();
+        const auto& strings = entry.strings.get();
         const auto& dllName = entry.dll.get();
         const auto& papyrusClass = entry.papyrus.get();
         const auto& funcName = entry.function.get();
@@ -92,9 +92,9 @@ namespace DynamicTranslationSE {
         }
 
         // Process strings
-        for (const auto& kwStr : keywords) {
-            if (kwStr.empty()) {
-                logger::warn("ConfigLoader: Empty keyword string in entry from '{}', skipping", filePath);
+        for (const auto& a_str : strings) {
+            if (a_str.empty()) {
+                logger::warn("ConfigLoader: Empty translation string in entry from '{}', skipping", filePath);
                 continue;
             }
 
@@ -111,10 +111,10 @@ namespace DynamicTranslationSE {
             // Register the provider
             {
                 std::unique_lock lock(gProvMutex);
-                gProvidersByKey[kwStr] = std::move(prov);
+                gProvidersByKey[a_str] = std::move(prov);
             }
 
-            logger::info("ConfigLoader: Registered provider for keyword '{}'", kwStr);
+            logger::info("ConfigLoader: Registered provider for translation string '{}'", a_str);
         }
     }
 
