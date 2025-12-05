@@ -7,11 +7,13 @@ bool Hooks::Install() {
 }
 
 void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::TranslateInfo* a_info) {
-    const auto keyUtf8 = Utils::WideToUtf8(a_info->GetKey());
+    auto keyUtf8 = Utils::WideToUtf8(a_info->GetKey());
 
     // Call original first
     g_OrigTranslateAny(a_this, a_info);
-    if (keyUtf8.empty()) return;
+    
+    if (keyUtf8.empty() || keyUtf8[0] != '$') return;
+    keyUtf8 = keyUtf8.substr(1);
 
     // Lookup provider by key
     DynamicTranslationSE::Provider prov{};
