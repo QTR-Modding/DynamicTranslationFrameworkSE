@@ -1,4 +1,5 @@
 #include "ConfigLoader.h"
+#include "logger.h"
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -245,7 +246,7 @@ namespace DynamicLoreboxes {
 
             if (doc.HasParseError()) {
                 logger::error("ConfigLoader: JSON parse error in '{}' at offset {}: {}",
-                    filePath, doc.GetErrorOffset(), rapidjson::GetParseErrorFunc(doc.GetParseError()));
+                    filePath, doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
                 continue;
             }
 
