@@ -3,3 +3,4 @@
 .vscode/settings.json
 build
 cmake-build*
+_codeql_detected_source_root

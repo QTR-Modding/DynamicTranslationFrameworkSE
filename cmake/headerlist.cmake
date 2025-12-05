@@ -6,4 +6,5 @@ set(headers ${headers}
 	include/Manager.h
 	include/Hooks.h
 	include/DynamicLoreboxes.h
+	include/ConfigLoader.h
 )

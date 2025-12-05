@@ -8,6 +8,8 @@
     "spdlog",
     "xbyak",
     "rapidcsv",
+    "rapidjson",
+    "boost-pfr",
     "clib-util",
     "clib-utils-qtr",
     "directxtk"
