@@ -7,11 +7,11 @@
 #include <rapidjson/document.h>
 #include "boost/pfr/core.hpp"
 #include "CLibUtilsQTR/PresetHelpers/Config.hpp"
-#include "DynamicLoreboxes.h"
+#include "DynamicTranslationSE.h"
 
-namespace DynamicLoreboxes {
+namespace DynamicTranslationSE {
     struct ConfigEntryBlock {
-        Presets::Field<std::vector<std::string>, rapidjson::Value> keywords{"keywords"};
+        Presets::Field<std::vector<std::string>, rapidjson::Value> strings{"strings"};
         Presets::Field<std::string, rapidjson::Value> dll{"dll"};
         Presets::Field<std::string, rapidjson::Value> papyrus{"papyrus"};
         Presets::Field<std::string, rapidjson::Value> function{"function"};

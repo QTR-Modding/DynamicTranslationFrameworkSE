@@ -1,5 +1,5 @@
 #include "Hooks.h"
-#include "DynamicLoreboxes.h"
+#include "DynamicTranslationSE.h"
 #include "Utils.h"
 
 bool Hooks::Install() {
@@ -14,13 +14,11 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
     if (keyUtf8.empty()) return;
 
     // Lookup provider by key
-    DynamicLoreboxes::Provider prov{};
+    DynamicTranslationSE::Provider prov{};
     {
-        std::shared_lock lk(DynamicLoreboxes::gProvMutex);
-        // keyword's name is actually the keyUtf8 but without the $ prefix
-        const std::string kw_name = keyUtf8.substr(1);
-        if (const auto it = DynamicLoreboxes::gProvidersByKey.find(kw_name);
-            it != DynamicLoreboxes::gProvidersByKey.end()) {
+        std::shared_lock lk(DynamicTranslationSE::gProvMutex);
+        if (const auto it = DynamicTranslationSE::gProvidersByKey.find(keyUtf8);
+            it != DynamicTranslationSE::gProvidersByKey.end()) {
             prov = it->second;
         }
     }

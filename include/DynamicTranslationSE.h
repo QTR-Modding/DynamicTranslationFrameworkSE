@@ -3,7 +3,7 @@
 #include <shared_mutex>
 #include <windows.h>
 
-namespace DynamicLoreboxes {
+namespace DynamicTranslationSE {
     using LoreFunc = const wchar_t*(__cdecl*)(RE::TESForm* item, RE::TESForm* owner);
 
     struct Provider {

@@ -1,7 +1,7 @@
-#include "DynamicLoreboxes.h"
+#include "DynamicTranslationSE.h"
 #include "PapyrusWrapper.h"
 
-namespace DynamicLoreboxes {
+namespace DynamicTranslationSE {
     std::wstring InvokeProvider(const Provider& prov, RE::TESForm* item, RE::TESForm* owner) {
         try {
             if (prov.native) {

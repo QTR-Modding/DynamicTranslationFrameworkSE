@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "dynamic-loreboxes",
+  "name": "dynamic-translation-framework-se",
   "version-string": "1.0.0.0",
   "dependencies": [
     "fast-cpp-csv-parser",

@@ -1,35 +1,8 @@
 #include "ConfigLoader.h"
 #include <rapidjson/error/en.h>
-#include "CLibUtilsQTR/FormReader.hpp"
 
-namespace DynamicLoreboxes {
-    namespace {
-        constexpr std::string_view kConfigFolder = R"(Data\SKSE\Plugins\DynamicLoreBoxes)";
-
-        bool StartsWithHex(const std::string& str) {
-            return str.size() > 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X');
-        }
-
-        bool IsDecimalNumber(const std::string& str) {
-            if (str.empty()) return false;
-            for (char c : str) {
-                if (!std::isdigit(static_cast<unsigned char>(c))) return false;
-            }
-            return true;
-        }
-
-        RE::FormID ParseFormID(const std::string& str) {
-            RE::FormID formId = 0;
-            if (StartsWithHex(str)) {
-                std::stringstream ss;
-                ss << std::hex << str;
-                ss >> formId;
-            } else if (IsDecimalNumber(str)) {
-                formId = static_cast<RE::FormID>(std::stoul(str));
-            }
-            return formId;
-        }
-    }
+namespace DynamicTranslationSE {
+    constexpr std::string_view kConfigFolder = R"(Data\SKSE\Plugins\DynamicTranslationFrameworkSE)";
 
     HMODULE ConfigLoader::GetOrLoadDLL(const std::string& dllName) {
         std::lock_guard lock(dllCacheMutex);
@@ -75,7 +48,7 @@ namespace DynamicLoreboxes {
     }
 
     void ConfigLoader::ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath) {
-        const auto& keywords = entry.keywords.get();
+        const auto& keywords = entry.strings.get();
         const auto& dllName = entry.dll.get();
         const auto& papyrusClass = entry.papyrus.get();
         const auto& funcName = entry.function.get();
@@ -118,7 +91,7 @@ namespace DynamicLoreboxes {
             }
         }
 
-        // Process keywords
+        // Process strings
         for (const auto& kwStr : keywords) {
             if (kwStr.empty()) {
                 logger::warn("ConfigLoader: Empty keyword string in entry from '{}', skipping", filePath);

@@ -4,6 +4,6 @@ set(sources ${sources}
 	src/Settings.cpp
 	src/PapyrusWrapper.cpp
 	src/Hooks.cpp
-	src/DynamicLoreboxes.cpp
+	src/DynamicTranslationSE.cpp
 	src/ConfigLoader.cpp
 )

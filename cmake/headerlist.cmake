@@ -5,6 +5,6 @@ set(headers ${headers}
 	include/Settings.h
 	include/PapyrusWrapper.h
 	include/Hooks.h
-	include/DynamicLoreboxes.h
+	include/DynamicTranslationSE.h
 	include/ConfigLoader.h
 )
