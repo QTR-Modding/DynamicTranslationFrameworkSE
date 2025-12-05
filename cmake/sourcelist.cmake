@@ -4,5 +4,6 @@ set(sources ${sources}
 	src/Settings.cpp
 	src/Manager.cpp
 	src/Hooks.cpp
- 	src/DynamicLoreboxes.cpp
+	src/DynamicLoreboxes.cpp
+	src/ConfigLoader.cpp
 )
