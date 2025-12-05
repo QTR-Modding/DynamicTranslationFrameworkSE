@@ -10,12 +10,11 @@
 #include "DynamicLoreboxes.h"
 
 namespace DynamicLoreboxes {
-
     struct ConfigEntryBlock {
-        Presets::Field<std::vector<std::string>, rapidjson::Value> keywords{ "keywords" };
-        Presets::Field<std::string, rapidjson::Value> dll{ "dll" };
-        Presets::Field<std::string, rapidjson::Value> papyrus{ "papyrus" };
-        Presets::Field<std::string, rapidjson::Value> function{ "function" };
+        Presets::Field<std::vector<std::string>, rapidjson::Value> keywords{"keywords"};
+        Presets::Field<std::string, rapidjson::Value> dll{"dll"};
+        Presets::Field<std::string, rapidjson::Value> papyrus{"papyrus"};
+        Presets::Field<std::string, rapidjson::Value> function{"function"};
 
         void load(rapidjson::Value& a_block) {
             boost::pfr::for_each_field(*this, [&](auto& field) {
@@ -36,5 +35,4 @@ namespace DynamicLoreboxes {
         static LoreFunc ResolveDLLFunction(HMODULE hmod, const std::string& funcName);
         static void ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath);
     };
-
 }

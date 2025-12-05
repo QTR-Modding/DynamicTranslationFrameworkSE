@@ -16,7 +16,7 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
     // Lookup provider by key
     DynamicLoreboxes::Provider prov{};
     {
-        std::shared_lock<std::shared_mutex> lk(DynamicLoreboxes::gProvMutex);
+        std::shared_lock lk(DynamicLoreboxes::gProvMutex);
         // keyword's name is actually the keyUtf8 but without the $ prefix
         const std::string kw_name = keyUtf8.substr(1);
         if (const auto it = DynamicLoreboxes::gProvidersByKey.find(kw_name);
@@ -54,7 +54,7 @@ bool Hooks::InstallTranslatorVtableHook() {
     auto** vtbl = *reinterpret_cast<void***>(tr.get());
 
     // Resolve the vanilla BSScaleformTranslator vtable pointer for comparison
-    const REL::Relocation<std::uintptr_t> baseVtblRel{RE::BSScaleformTranslator::VTABLE[0]};
+    const REL::Relocation baseVtblRel{RE::BSScaleformTranslator::VTABLE[0]};
     auto** baseVtbl = reinterpret_cast<void**>(baseVtblRel.address());
 
     // Choose the vtable we will patch: if it's the vanilla class vtable, patch that one; otherwise, patch the

@@ -3,7 +3,6 @@
 #include "CLibUtilsQTR/FormReader.hpp"
 
 namespace DynamicLoreboxes {
-
     namespace {
         constexpr std::string_view kConfigFolder = R"(Data\SKSE\Plugins\DynamicLoreBoxes)";
 
@@ -105,7 +104,8 @@ namespace DynamicLoreboxes {
             if (hmod) {
                 nativeFunc = ResolveDLLFunction(hmod, funcName);
                 if (!nativeFunc) {
-                    logger::error("ConfigLoader: Failed to resolve native function '{}' from DLL '{}' in '{}'", funcName, dllName, filePath);
+                    logger::error("ConfigLoader: Failed to resolve native function '{}' from DLL '{}' in '{}'",
+                                  funcName, dllName, filePath);
                     // Continue anyway if papyrus is also specified
                     if (!hasPapyrus) {
                         return;
@@ -199,7 +199,7 @@ namespace DynamicLoreboxes {
 
             if (doc.HasParseError()) {
                 logger::error("ConfigLoader: JSON parse error in '{}' at offset {}: {}",
-                    filePath, doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+                              filePath, doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
                 continue;
             }
 
@@ -225,5 +225,4 @@ namespace DynamicLoreboxes {
 
         logger::info("ConfigLoader: Configuration loading complete");
     }
-
 }
