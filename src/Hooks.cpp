@@ -1,0 +1,106 @@
+#include "Hooks.h"
+#include "DynamicLoreboxes.h"
+#include "Utils.h"
+
+bool Hooks::Install() {
+    using namespace DynamicLoreboxes;
+    {
+        std::unique_lock lock(gProvMutex);
+        // for testing, lets add this dll (AlchemyOfTime.dll) to the gProvidersByKey with the keyword aot_kw and the
+        // function BuildLoreForHover
+        Provider prov{};
+        // we get the module handle of the current dll
+        if (prov.hmod = GetModuleHandleA("AlchemyOfTime.dll"); prov.hmod) {
+            prov.native = reinterpret_cast<LoreFunc>(GetProcAddress(prov.hmod, "BuildLoreForHover"));
+        } else {
+            logger::warn("DynamicLoreboxes: failed to get module handle for AlchemyOfTime.dll");
+        }
+        if (prov.native) {
+            gProvidersByKey.emplace("LoreBox_quantAoT", prov);
+        } else {
+            logger::warn("DynamicLoreboxes: failed to get BuildLoreForHover from AlchemyOfTime.dll");
+        }
+        logger::info("DynamicLoreboxes: registered test provider for keyword {}", "LoreBox_quantAoT");
+    }
+    return InstallTranslatorVtableHook();
+}
+
+void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::TranslateInfo* a_info) {
+    const auto keyUtf8 = Utils::WideToUtf8(a_info->GetKey());
+
+    // Call original first
+    g_OrigTranslateAny(a_this, a_info);
+    if (keyUtf8.empty()) return;
+
+    // Lookup provider by key
+    DynamicLoreboxes::Provider prov{};
+    {
+        std::shared_lock<std::shared_mutex> lk(DynamicLoreboxes::gProvMutex);
+        // keyword's name is actually the keyUtf8 but without the $ prefix
+        const std::string kw_name = keyUtf8.substr(1);
+        if (const auto it = DynamicLoreboxes::gProvidersByKey.find(kw_name);
+            it != DynamicLoreboxes::gProvidersByKey.end()) {
+            prov = it->second;
+        }
+    }
+    if (!(prov.native || (prov.papyrusForm && !prov.papyrusFunc.empty()))) return;
+
+    RE::TESForm* item = nullptr;
+    RE::TESForm* owner = nullptr;
+    #undef GetObject
+    if (const auto* selected = Utils::GetSelectedItemDataInMenu()) {
+        if (selected->objDesc) item = selected->objDesc->GetObject();
+        owner = Utils::GetOwnerOfItem(selected);
+    }
+
+    const auto body = InvokeProvider(prov, item, owner);
+    if (!body.empty()) a_info->SetResult(body.c_str(), body.size());
+}
+
+bool Hooks::InstallTranslatorVtableHook() {
+    const auto sfm = RE::BSScaleformManager::GetSingleton();
+    const auto loader = sfm ? sfm->loader : nullptr;
+    const auto tr = loader
+                        ? loader->GetState<RE::GFxTranslator>(RE::GFxState::StateType::kTranslator)
+                        : RE::GPtr<RE::GFxTranslator>{};
+
+    if (!tr) {
+        logger::warn("Translator not available yet; will skip vtable hook.");
+        return false;
+    }
+
+    // vtable of the active translator instance
+    auto** vtbl = *reinterpret_cast<void***>(tr.get());
+
+    // Resolve the vanilla BSScaleformTranslator vtable pointer for comparison
+    const REL::Relocation<std::uintptr_t> baseVtblRel{RE::BSScaleformTranslator::VTABLE[0]};
+    auto** baseVtbl = reinterpret_cast<void**>(baseVtblRel.address());
+
+    // Choose the vtable we will patch: if it's the vanilla class vtable, patch that one; otherwise, patch the
+    // instance's
+    auto** targetVtbl = vtbl == baseVtbl ? baseVtbl : vtbl;
+
+    // Already patched?
+    if (g_TranslatorVTable == targetVtbl && g_OrigTranslateAny) {
+        logger::info("Translator vtable already hooked {:p}", static_cast<void*>(targetVtbl));
+        return true;
+    }
+
+    // Patch vtable slot 0x2 (Translate)
+    DWORD oldProt{};
+    if (!VirtualProtect(&targetVtbl[2], sizeof(void*), PAGE_EXECUTE_READWRITE, &oldProt)) {
+        logger::error("VirtualProtect failed while preparing to patch translator vtable.");
+        return false;
+    }
+
+    g_OrigTranslateAny = reinterpret_cast<TranslateFn>(targetVtbl[2]);
+    targetVtbl[2] = reinterpret_cast<void*>(&Translate_Hook);
+
+    DWORD dummy{};
+    VirtualProtect(&targetVtbl[2], sizeof(void*), oldProt, &dummy);
+
+    g_TranslatorVTable = targetVtbl;
+
+    logger::info("Installed Translate vtable hook on translator {:p}", static_cast<void*>(targetVtbl));
+    return true;
+}

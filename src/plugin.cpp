@@ -1,16 +1,16 @@
+#include "Hooks.h"
 #include "logger.h"
 
-void OnMessage(SKSE::MessagingInterface::Message* message) {
-    if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-        // Start
-    }
-    if (message->type == SKSE::MessagingInterface::kNewGame || message->type == SKSE::MessagingInterface::kPostLoadGame) {
-        // Post-load
+namespace {
+    // ReSharper disable once CppParameterMayBeConstPtrOrRef
+    void OnMessage(SKSE::MessagingInterface::Message* message) {
+        if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+            Hooks::Install();
+        }
     }
 }
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse) {
-
     SetupLog();
     logger::info("Plugin loaded");
     SKSE::Init(skse);
