@@ -52,15 +52,27 @@ namespace {
         return translator;
     }
 
-    FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8, const std::string functionClass,
-                                             const std::string functionName,
+    [[maybe_unused]] bool Translate(const std::wstring& key, RE::GFxWStringBuffer& result) {
+        if (const auto translator = GetTranslator()) {
+            RE::GFxTranslator::TranslateInfo translateInfo;
+            translateInfo.key = key.c_str();
+            translateInfo.result = std::addressof(result);
+            translator->Translate(std::addressof(translateInfo));
+            translator->Release();
+            return true;
+        }
+        return false;
+    }
+
+    FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8, const std::string& functionClass,
+                                             const std::string& functionName,
                                              RE::TESForm* item, RE::TESForm* owner) {
         // Ask PapyrusWrapper for the Awaitable
         auto awaitable = PapyrusWrapper::GetSingleton()->
             GetDynamicTranslation(functionClass, functionName, item, owner);
 
         // Suspend here until the VM finishes and the callback resumes us
-        RE::BSScript::Variable result = co_await awaitable;
+        const RE::BSScript::Variable result = co_await awaitable;
 
         // When we get here, Papyrus has returned
         if (!result.IsString()) {
@@ -68,27 +80,10 @@ namespace {
             co_return;
         }
 
-        if (auto result_str = result.GetString(); result_str.empty()) {
-            logger::warn("RunPapyrusTranslationAsync: result for key '{}' is an empty string", keyUtf8);
-        } else if (auto translator = GetTranslator()) {
+        if (auto result_str = result.GetString(); !result_str.empty()) {
             logger::info("RunPapyrusTranslationAsync: got Papyrus result '{}' for key '{}'", result_str, keyUtf8);
-            papyrusResults[keyUtf8] = result.GetString();
-            
-            std::wstring key_utf16 = SKSE::stl::utf8_to_utf16("$" + keyUtf8).value_or(L""s);
-            RE::GFxWStringBuffer a_result_dummy;
-
-            RE::GFxTranslator::TranslateInfo translateInfo;
-            translateInfo.key = key_utf16.c_str();
-            translateInfo.result = std::addressof(a_result_dummy);
-
-            translator->Translate(std::addressof(translateInfo));
-            translator->Release();
-        } else {
-            logger::error(
-                "RunPapyrusTranslationAsync: could not get GFxTranslator to apply Papyrus result for key '{}'",
-                keyUtf8);
+            papyrusResults[keyUtf8] = result_str;
         }
-
         co_return;
     }
 }

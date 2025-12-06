@@ -11,7 +11,7 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
 
     // Call original first
     g_OrigTranslateAny(a_this, a_info);
-    
+
     if (keyUtf8.empty() || keyUtf8[0] != '$') return;
     keyUtf8 = keyUtf8.substr(1);
 

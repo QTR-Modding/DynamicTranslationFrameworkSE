@@ -2,8 +2,9 @@
 
 class PapyrusWrapper : public REX::Singleton<PapyrusWrapper> {
     template <class... Args>
-    RE::BSScript::IVirtualMachine::Awaitable CallFunction(std::string_view functionClass, std::string_view function,
-                      Args&&... a_args) {
+    RE::BSScript::IVirtualMachine::Awaitable CallFunction(const std::string_view functionClass,
+                                                          const std::string_view function,
+                                                          Args&&... a_args) {
         auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
         if (!vm) {
             logger::error("PapyrusWrapper: VirtualMachine::GetSingleton() returned null");
@@ -22,8 +23,10 @@ class PapyrusWrapper : public REX::Singleton<PapyrusWrapper> {
     }
 
 public:
-    RE::BSScript::IVirtualMachine::Awaitable GetDynamicTranslation(std::string_view functionClass, std::string_view functionName, RE::TESForm* item,
-                                       RE::TESForm* owner) {
+    RE::BSScript::IVirtualMachine::Awaitable GetDynamicTranslation(const std::string_view functionClass,
+                                                                   const std::string_view functionName,
+                                                                   RE::TESForm* item,
+                                                                   RE::TESForm* owner) {
         return CallFunction(functionClass, functionName, item, owner);
     }
 };
