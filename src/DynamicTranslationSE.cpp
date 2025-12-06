@@ -63,6 +63,12 @@ namespace {
         }
         co_return;
     }
+
+    void DynamicTranslateV1(RE::StaticFunctionTag*, std::string a_key,
+                            std::string a_val) { // NOLINT(performance-unnecessary-value-param)
+        std::unique_lock lk(papyrusResultsMutex);
+        papyrusResults[std::move(a_key)] = std::move(a_val);
+    }
 }
 
 
@@ -74,6 +80,9 @@ namespace DynamicTranslationSE {
                 const std::wstring result(sv);
                 return result;
             }
+            if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
+                RunPapyrusTranslationAsync(a_key, prov.papyrusClass, prov.papyrusFunc, item, owner);
+            }
             {
                 std::shared_lock lk(papyrusResultsMutex);
                 if (const auto it = papyrusResults.find(a_key); it != papyrusResults.end()) {
@@ -84,13 +93,14 @@ namespace DynamicTranslationSE {
                     return result;
                 }
             }
-            if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
-                RunPapyrusTranslationAsync(a_key, prov.papyrusClass, prov.papyrusFunc, item, owner);
-                return {}; // Return empty immediately; result will be handled asynchronously
-            }
         } catch (...) {
             logger::error("DynamicTranslationFrameworkSE: provider invoke failed");
         }
         return std::wstring{};
+    }
+
+    bool InstallBindings(RE::BSScript::IVirtualMachine* vm) {
+        vm->RegisterFunction("DynamicTranslateV1", "DynamicTranslationFramework", DynamicTranslateV1);
+        return true;
     }
 }

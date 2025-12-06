@@ -1,9 +1,8 @@
 #include "ConfigLoader.h"
+#include "Settings.h"
 #include <rapidjson/error/en.h>
 
 namespace DynamicTranslationSE {
-    constexpr std::string_view kConfigFolder = R"(Data\SKSE\Plugins\DynamicTranslationFrameworkSE)";
-
     HMODULE ConfigLoader::GetOrLoadDLL(const std::string& dllName) {
         std::lock_guard lock(dllCacheMutex);
 
@@ -119,6 +118,7 @@ namespace DynamicTranslationSE {
     }
 
     void ConfigLoader::Load() {
+        using namespace DynamicTranslationFrameworkSE;
         if (!std::filesystem::exists(kConfigFolder)) {
             logger::info("ConfigLoader: Config folder does not exist: {}", kConfigFolder);
             return;

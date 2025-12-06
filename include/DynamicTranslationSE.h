@@ -19,4 +19,6 @@ namespace DynamicTranslationSE {
     inline std::unordered_map<std::string, Provider> gProvidersByKey; // key is keyword form
 
     std::wstring InvokeProvider(const Provider& prov, RE::TESForm* item, RE::TESForm* owner, const std::string& a_key);
+
+    bool InstallBindings(RE::BSScript::IVirtualMachine* vm);
 }

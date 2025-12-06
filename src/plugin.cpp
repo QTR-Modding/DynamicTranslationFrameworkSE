@@ -6,6 +6,10 @@ namespace {
     // ReSharper disable once CppParameterMayBeConstPtrOrRef
     void OnMessage(SKSE::MessagingInterface::Message* message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+            if (!SKSE::GetPapyrusInterface()->Register(DynamicTranslationSE::InstallBindings)) {
+                logger::error("Failed to register Papyrus API");
+                return;
+            }
             DynamicTranslationSE::ConfigLoader::Load();
             Hooks::Install();
         }
