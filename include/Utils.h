@@ -57,4 +57,29 @@ namespace Utils {
         }
         return nullptr;
     }
+
+    struct FireAndForget {
+        struct promise_type {
+            static FireAndForget get_return_object() noexcept { return {}; }
+
+            // Start running immediately when the function is called
+            static std::suspend_never initial_suspend() noexcept { return {}; }
+
+            // When the coroutine finishes, destroy it immediately
+            static std::suspend_never final_suspend() noexcept { return {}; }
+
+            static void return_void() noexcept {
+            }
+
+            static void unhandled_exception() noexcept {
+                try {
+                    throw;
+                } catch (const std::exception& e) {
+                    logger::error("FireAndForget coroutine error: {}", e.what());
+                } catch (...) {
+                    logger::error("FireAndForget coroutine error: unknown exception");
+                }
+            }
+        };
+    };
 }

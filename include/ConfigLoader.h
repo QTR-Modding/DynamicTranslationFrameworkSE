@@ -1,9 +1,5 @@
 #pragma once
-#include <string>
-#include <vector>
 #include <unordered_map>
-#include <mutex>
-#include <windows.h>
 #include <rapidjson/document.h>
 #include "boost/pfr/core.hpp"
 #include "CLibUtilsQTR/PresetHelpers/Config.hpp"

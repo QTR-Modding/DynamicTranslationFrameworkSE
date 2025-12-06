@@ -1,7 +1,6 @@
 #pragma once
 #include <unordered_map>
 #include <shared_mutex>
-#include <windows.h>
 
 namespace DynamicTranslationSE {
     using DynamicTranslationFunc = const wchar_t*(__cdecl*)(RE::TESForm* item, RE::TESForm* owner);

@@ -1,33 +1,9 @@
 #include "DynamicTranslationSE.h"
 #include "PapyrusWrapper.h"
-#include <coroutine>
-
-struct FireAndForget {
-    struct promise_type {
-        static FireAndForget get_return_object() noexcept { return {}; }
-
-        // Start running immediately when the function is called
-        static std::suspend_never initial_suspend() noexcept { return {}; }
-
-        // When the coroutine finishes, destroy it immediately
-        static std::suspend_never final_suspend() noexcept { return {}; }
-
-        static void return_void() noexcept {
-        }
-
-        static void unhandled_exception() noexcept {
-            try {
-                throw;
-            } catch (const std::exception& e) {
-                logger::error("FireAndForget coroutine error: {}", e.what());
-            } catch (...) {
-                logger::error("FireAndForget coroutine error: unknown exception");
-            }
-        }
-    };
-};
+#include "Utils.h"
 
 namespace {
+    std::shared_mutex papyrusResultsMutex;
     inline std::unordered_map<std::string, std::string> papyrusResults;
 
 
@@ -64,9 +40,9 @@ namespace {
         return false;
     }
 
-    FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8, const std::string& functionClass,
-                                             const std::string& functionName,
-                                             RE::TESForm* item, RE::TESForm* owner) {
+    Utils::FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8, const std::string& functionClass,
+                                                    const std::string& functionName,
+                                                    RE::TESForm* item, RE::TESForm* owner) {
         // Ask PapyrusWrapper for the Awaitable
         auto awaitable = PapyrusWrapper::GetSingleton()->
             GetDynamicTranslation(functionClass, functionName, item, owner);
@@ -82,6 +58,7 @@ namespace {
 
         if (auto result_str = result.GetString(); !result_str.empty()) {
             logger::info("RunPapyrusTranslationAsync: got Papyrus result '{}' for key '{}'", result_str, keyUtf8);
+            std::unique_lock lk(papyrusResultsMutex);
             papyrusResults[keyUtf8] = result_str;
         }
         co_return;
@@ -97,12 +74,15 @@ namespace DynamicTranslationSE {
                 const std::wstring result(sv);
                 return result;
             }
-            if (const auto it = papyrusResults.find(a_key); it != papyrusResults.end()) {
-                // Use cached result from previous async call
-                logger::info("DynamicTranslationFrameworkSE: using cached Papyrus result {} for key '{}'",
-                             it->second, a_key);
-                std::wstring result = Utf8ToWide(it->second.c_str());
-                return result;
+            {
+                std::shared_lock lk(papyrusResultsMutex);
+                if (const auto it = papyrusResults.find(a_key); it != papyrusResults.end()) {
+                    // Use cached result from previous async call
+                    logger::info("DynamicTranslationFrameworkSE: using cached Papyrus result {} for key '{}'",
+                                 it->second, a_key);
+                    std::wstring result = Utf8ToWide(it->second.c_str());
+                    return result;
+                }
             }
             if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
                 RunPapyrusTranslationAsync(a_key, prov.papyrusClass, prov.papyrusFunc, item, owner);
