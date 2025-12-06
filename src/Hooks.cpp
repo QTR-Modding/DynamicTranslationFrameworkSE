@@ -34,7 +34,7 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
         owner = Utils::GetOwnerOfItem(selected);
     }
 
-    const auto body = InvokeProvider(prov, item, owner);
+    const auto body = InvokeProvider(prov, item, owner, keyUtf8);
     if (!body.empty()) a_info->SetResult(body.c_str(), body.size());
 }
 
