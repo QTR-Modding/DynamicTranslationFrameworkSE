@@ -32,7 +32,7 @@ namespace DynamicTranslationSE {
         static inline std::mutex dllCacheMutex;
 
         static HMODULE GetOrLoadDLL(const std::string& dllName);
-        static LoreFunc ResolveDLLFunction(HMODULE hmod, const std::string& funcName);
+        static DynamicTranslationFunc ResolveDLLFunction(HMODULE hmod, const std::string& funcName);
         static void ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath);
     };
 }

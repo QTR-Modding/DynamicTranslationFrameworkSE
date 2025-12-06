@@ -33,7 +33,7 @@ namespace DynamicTranslationSE {
         return hmod;
     }
 
-    LoreFunc ConfigLoader::ResolveDLLFunction(HMODULE hmod, const std::string& funcName) {
+    DynamicTranslationFunc ConfigLoader::ResolveDLLFunction(HMODULE hmod, const std::string& funcName) {
         if (!hmod || funcName.empty()) {
             return nullptr;
         }
@@ -44,7 +44,7 @@ namespace DynamicTranslationSE {
             return nullptr;
         }
 
-        return reinterpret_cast<LoreFunc>(proc);
+        return reinterpret_cast<DynamicTranslationFunc>(proc);
     }
 
     void ConfigLoader::ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath) {
@@ -71,7 +71,7 @@ namespace DynamicTranslationSE {
 
         // Load DLL and resolve function if native
         HMODULE hmod = nullptr;
-        LoreFunc nativeFunc = nullptr;
+        DynamicTranslationFunc nativeFunc = nullptr;
         if (hasDll) {
             hmod = GetOrLoadDLL(dllName);
             if (hmod) {

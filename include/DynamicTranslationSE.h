@@ -4,12 +4,12 @@
 #include <windows.h>
 
 namespace DynamicTranslationSE {
-    using LoreFunc = const wchar_t*(__cdecl*)(RE::TESForm* item, RE::TESForm* owner);
+    using DynamicTranslationFunc = const wchar_t*(__cdecl*)(RE::TESForm* item, RE::TESForm* owner);
 
     struct Provider {
         // DLL
         HMODULE hmod{};
-        LoreFunc native{};
+        DynamicTranslationFunc native{};
         // Papyrus
         std::string papyrusClass{};
         std::string papyrusFunc;
