@@ -1,32 +1,29 @@
 ﻿#pragma once
+#include "DynamicTranslationSE.h"
+#include "Settings.h"
+#include "CLibUtilsQTR/Papyrus.hpp"
 
 class PapyrusWrapper : public REX::Singleton<PapyrusWrapper> {
-    template <class... Args>
-    RE::BSScript::IVirtualMachine::Awaitable CallFunction(const std::string_view functionClass,
-                                                          const std::string_view function,
-                                                          Args&&... a_args) {
-        auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
-        if (!vm) {
-            logger::error("PapyrusWrapper: VirtualMachine::GetSingleton() returned null");
-            return {};
-        }
-
-        logger::info("PapyrusWrapper: VM pointer = {:016X}", reinterpret_cast<std::uintptr_t>(vm));
-
-        auto args = RE::MakeFunctionArguments(std::move(a_args)...);
-        auto a_awaitable =
-            vm->ADispatchStaticCall(RE::BSFixedString{functionClass}, RE::BSFixedString{function}, args);
-
-        delete args;
-
-        return a_awaitable;
-    }
-
 public:
-    RE::BSScript::IVirtualMachine::Awaitable GetDynamicTranslation(const std::string_view functionClass,
-                                                                   const std::string_view functionName,
-                                                                   RE::TESForm* item,
-                                                                   RE::TESForm* owner) {
-        return CallFunction(functionClass, functionName, item, owner);
+    static RE::BSScript::IVirtualMachine::Awaitable GetDynamicTranslation(
+        const DynamicTranslationSE::PapyrusScriptID& scriptID,
+        const std::string& a_key) {
+        if (const auto a_form = RE::TESForm::LookupByID(scriptID.first)) {
+            if (const auto vm = Papyrus::VM::GetSingleton()) {
+                auto lock = RE::BSSpinLockGuard(vm->attachedScriptsLock);
+                if (const auto a_script = Papyrus::GetAttachedScript(scriptID.second, a_form)) {
+                    if (auto obj = static_cast<RE::BSTSmartPointer<RE::BSScript::Object>>(a_script->get())) {
+                        using namespace DynamicTranslationFrameworkSE;
+                        const auto vmargs = RE::MakeFunctionArguments(static_cast<std::string>(a_key));
+                        auto a_awaitable = vm->ADispatchMethodCall(obj, api_function_name, vmargs);
+                        delete vmargs;
+                        logger::info("GetDynamicTranslation: dispatched method call to script '{}'",
+                                     scriptID.second);
+                        return a_awaitable;
+                    }
+                }
+            }
+        }
+        return {};
     }
 };

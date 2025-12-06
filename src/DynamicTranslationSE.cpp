@@ -40,19 +40,15 @@ namespace {
         return false;
     }
 
-    Utils::FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8, const std::string& functionClass,
-                                                    const std::string& functionName,
-                                                    RE::TESForm* item, RE::TESForm* owner) {
-        // Ask PapyrusWrapper for the Awaitable
-        auto awaitable = PapyrusWrapper::GetSingleton()->
-            GetDynamicTranslation(functionClass, functionName, item, owner);
+    Utils::FireAndForget RunPapyrusTranslationAsync(const std::string keyUtf8,
+                                                    const DynamicTranslationSE::PapyrusScriptID& scriptID) {
+        auto awaitable = PapyrusWrapper::GetSingleton()->GetDynamicTranslation(scriptID, keyUtf8);
 
-        // Suspend here until the VM finishes and the callback resumes us
         const RE::BSScript::Variable result = co_await awaitable;
 
-        // When we get here, Papyrus has returned
         if (!result.IsString()) {
             logger::warn("RunPapyrusTranslationAsync: result for key '{}' is not a string", keyUtf8);
+
             co_return;
         }
 
@@ -73,20 +69,19 @@ namespace {
 
 
 namespace DynamicTranslationSE {
-    std::wstring InvokeProvider(const Provider& prov, RE::TESForm* item, RE::TESForm* owner, const std::string& a_key) {
+    std::wstring InvokeProvider(const Provider& prov, const std::string& a_key) {
         try {
             if (prov.native) {
-                const auto sv = prov.native(item, owner);
+                const auto sv = prov.native(a_key);
                 const std::wstring result(sv);
                 return result;
             }
-            if (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()) {
-                RunPapyrusTranslationAsync(a_key, prov.papyrusClass, prov.papyrusFunc, item, owner);
+            if (!prov.scriptID.second.empty()) {
+                RunPapyrusTranslationAsync(a_key, prov.scriptID);
             }
             {
                 std::shared_lock lk(papyrusResultsMutex);
                 if (const auto it = papyrusResults.find(a_key); it != papyrusResults.end()) {
-                    // Use cached result from previous async call
                     logger::info("DynamicTranslationFrameworkSE: using cached Papyrus result {} for key '{}'",
                                  it->second, a_key);
                     std::wstring result = Utf8ToWide(it->second.c_str());

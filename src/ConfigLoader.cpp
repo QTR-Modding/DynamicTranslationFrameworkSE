@@ -6,7 +6,7 @@ namespace DynamicTranslationSE {
     HMODULE ConfigLoader::GetOrLoadDLL(const std::string& dllName) {
         std::lock_guard lock(dllCacheMutex);
 
-        auto it = dllCache.find(dllName);
+        const auto it = dllCache.find(dllName);
         if (it != dllCache.end()) {
             return it->second;
         }
@@ -21,7 +21,7 @@ namespace DynamicTranslationSE {
         std::wstring wideName(wideLen, L'\0');
         MultiByteToWideChar(CP_UTF8, 0, dllName.c_str(), -1, wideName.data(), wideLen);
 
-        HMODULE hmod = LoadLibraryW(wideName.c_str());
+        const HMODULE hmod = LoadLibraryW(wideName.c_str());
         if (!hmod) {
             logger::error("ConfigLoader: Failed to load DLL: {} (error: {})", dllName, GetLastError());
             return nullptr;
@@ -37,7 +37,7 @@ namespace DynamicTranslationSE {
             return nullptr;
         }
 
-        auto proc = GetProcAddress(hmod, funcName.c_str());
+        const auto proc = GetProcAddress(hmod, funcName.c_str());
         if (!proc) {
             logger::error("ConfigLoader: Failed to resolve function '{}' (error: {})", funcName, GetLastError());
             return nullptr;
@@ -49,36 +49,29 @@ namespace DynamicTranslationSE {
     void ConfigLoader::ProcessConfigEntry(const ConfigEntryBlock& entry, const std::string& filePath) {
         const auto& strings = entry.strings.get();
         const auto& dllName = entry.dll.get();
-        const auto& papyrusClass = entry.papyrus.get();
-        const auto& funcName = entry.function.get();
+        const auto& editorId = entry.papyrus.get();
+        const auto form = RE::TESForm::LookupByEditorID(editorId.c_str());
+        const auto formID = form ? form->GetFormID() : 0;
 
         const bool hasDll = !dllName.empty();
-        const bool hasPapyrus = !papyrusClass.empty();
-        const bool hasFunction = !funcName.empty();
+        const bool hasPapyrus = formID > 0 && !editorId.empty();
 
-        // Validate: function is required if dll or papyrus is specified
-        if ((hasDll || hasPapyrus) && !hasFunction) {
-            logger::error("ConfigLoader: Entry in '{}' has 'dll' or 'papyrus' but no 'function'", filePath);
-            return;
-        }
-
-        // Validate: at least one provider type must be specified
         if (!hasDll && !hasPapyrus) {
-            logger::warn("ConfigLoader: Entry in '{}' has no 'dll' or 'papyrus' specified, skipping", filePath);
+            logger::warn("ConfigLoader: Entry in '{}' has neither 'dll' nor 'papyrus', skipping", filePath);
             return;
         }
 
-        // Load DLL and resolve function if native
+        // Load DLL and resolve fixed function name if native
         HMODULE hmod = nullptr;
         DynamicTranslationFunc nativeFunc = nullptr;
         if (hasDll) {
             hmod = GetOrLoadDLL(dllName);
             if (hmod) {
-                nativeFunc = ResolveDLLFunction(hmod, funcName);
+                nativeFunc = ResolveDLLFunction(hmod, "OnDynamicTranslationRequest");
                 if (!nativeFunc) {
-                    logger::error("ConfigLoader: Failed to resolve native function '{}' from DLL '{}' in '{}'",
-                                  funcName, dllName, filePath);
-                    // Continue anyway if papyrus is also specified
+                    logger::error(
+                        "ConfigLoader: Failed to resolve native function 'OnDynamicTranslationRequest' from DLL '{}' in '{}'",
+                        dllName, filePath);
                     if (!hasPapyrus) {
                         return;
                     }
@@ -97,17 +90,13 @@ namespace DynamicTranslationSE {
                 continue;
             }
 
-            // Create and populate the Provider
             Provider prov{};
             prov.hmod = hmod;
             prov.native = nativeFunc;
-
             if (hasPapyrus) {
-                prov.papyrusFunc = funcName;
-                prov.papyrusClass = papyrusClass;
+                prov.scriptID = {formID, editorId};
             }
 
-            // Register the provider
             {
                 std::unique_lock lock(gProvMutex);
                 gProvidersByKey[a_str] = std::move(prov);
@@ -126,13 +115,11 @@ namespace DynamicTranslationSE {
 
         logger::info("ConfigLoader: Loading configurations from {}", kConfigFolder);
 
-        // Clear existing registry for reload
         {
             std::unique_lock lock(gProvMutex);
             gProvidersByKey.clear();
         }
 
-        // Iterate through the folder only (non-recursive)
         std::error_code ec;
         for (const auto& entry : std::filesystem::directory_iterator(kConfigFolder, ec)) {
             if (ec) {
@@ -152,7 +139,6 @@ namespace DynamicTranslationSE {
             const std::string filePath = path.string();
             logger::info("ConfigLoader: Processing file: {}", filePath);
 
-            // Read the file
             std::ifstream ifs(path);
             if (!ifs.is_open()) {
                 logger::error("ConfigLoader: Failed to open file: {}", filePath);
@@ -162,7 +148,6 @@ namespace DynamicTranslationSE {
             std::string jsonStr((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
             ifs.close();
 
-            // Parse JSON
             rapidjson::Document doc;
             doc.Parse(jsonStr.c_str());
 
@@ -172,7 +157,6 @@ namespace DynamicTranslationSE {
                 continue;
             }
 
-            // Handle both array and single object formats
             if (doc.IsArray()) {
                 for (auto& item : doc.GetArray()) {
                     if (!item.IsObject()) {

@@ -24,17 +24,10 @@ void Hooks::Translate_Hook(RE::GFxTranslator* a_this, RE::GFxTranslator::Transla
             prov = it->second;
         }
     }
-    if (!(prov.native || (!prov.papyrusClass.empty() && !prov.papyrusFunc.empty()))) return;
+    if (!(prov.native || !prov.scriptID.second.empty())) return;
 
-    RE::TESForm* item = nullptr;
-    RE::TESForm* owner = nullptr;
-    #undef GetObject
-    if (const auto* selected = Utils::GetSelectedItemDataInMenu()) {
-        if (selected->objDesc) item = selected->objDesc->GetObject();
-        owner = Utils::GetOwnerOfItem(selected);
-    }
-
-    const auto body = InvokeProvider(prov, item, owner, keyUtf8);
+   
+    const auto body = InvokeProvider(prov, keyUtf8);
     if (!body.empty()) a_info->SetResult(body.c_str(), body.size());
 }
 

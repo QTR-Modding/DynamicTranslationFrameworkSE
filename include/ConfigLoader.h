@@ -8,9 +8,8 @@
 namespace DynamicTranslationSE {
     struct ConfigEntryBlock {
         Presets::Field<std::vector<std::string>, rapidjson::Value> strings{"strings"};
-        Presets::Field<std::string, rapidjson::Value> dll{"dll"};
+        Presets::Field<std::string, rapidjson::Value> dll{"skse"};
         Presets::Field<std::string, rapidjson::Value> papyrus{"papyrus"};
-        Presets::Field<std::string, rapidjson::Value> function{"function"};
 
         void load(rapidjson::Value& a_block) {
             boost::pfr::for_each_field(*this, [&](auto& field) {

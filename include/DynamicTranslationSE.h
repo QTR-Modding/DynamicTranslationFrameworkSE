@@ -3,22 +3,19 @@
 #include <shared_mutex>
 
 namespace DynamicTranslationSE {
-    using DynamicTranslationFunc = const wchar_t*(__cdecl*)(RE::TESForm* item, RE::TESForm* owner);
+    using DynamicTranslationFunc = const wchar_t*(__cdecl*)(std::string);
+    using PapyrusScriptID = std::pair<RE::FormID, std::string>; // formID, editorID
 
     struct Provider {
-        // DLL
         HMODULE hmod{};
         DynamicTranslationFunc native{};
-        // Papyrus
-        std::string papyrusClass{};
-        std::string papyrusFunc;
+        PapyrusScriptID scriptID{};
     };
 
-    // Registry keyed by translator key (UTF-8). Config loader will populate this.
     inline std::shared_mutex gProvMutex;
-    inline std::unordered_map<std::string, Provider> gProvidersByKey; // key is keyword form
+    inline std::unordered_map<std::string, Provider> gProvidersByKey;
 
-    std::wstring InvokeProvider(const Provider& prov, RE::TESForm* item, RE::TESForm* owner, const std::string& a_key);
+    std::wstring InvokeProvider(const Provider& prov, const std::string& a_key);
 
     bool InstallBindings(RE::BSScript::IVirtualMachine* vm);
 }
