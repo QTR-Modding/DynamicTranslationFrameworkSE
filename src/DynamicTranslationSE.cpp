@@ -52,18 +52,19 @@ namespace {
             co_return;
         }
 
-        if (auto result_str = result.GetString(); !result_str.empty()) {
-            logger::info("RunPapyrusTranslationAsync: got Papyrus result '{}' for key '{}'", result_str, keyUtf8);
+        if (const auto result_str = result.GetString(); !result_str.empty()) {
             std::unique_lock lk(papyrusResultsMutex);
             papyrusResults[keyUtf8] = result_str;
         }
         co_return;
     }
 
+    // ReSharper disable once CppPassValueParameterByConstReference
     void DynamicTranslateV1(RE::StaticFunctionTag*, std::string a_key,
+                            // ReSharper disable once CppPassValueParameterByConstReference
                             std::string a_val) { // NOLINT(performance-unnecessary-value-param)
         std::unique_lock lk(papyrusResultsMutex);
-        papyrusResults[std::move(a_key)] = std::move(a_val);
+        papyrusResults[a_key] = a_val;
     }
 }
 
@@ -82,8 +83,6 @@ namespace DynamicTranslationSE {
             {
                 std::shared_lock lk(papyrusResultsMutex);
                 if (const auto it = papyrusResults.find(a_key); it != papyrusResults.end()) {
-                    logger::info("DynamicTranslationFrameworkSE: using cached Papyrus result {} for key '{}'",
-                                 it->second, a_key);
                     std::wstring result = Utf8ToWide(it->second.c_str());
                     return result;
                 }

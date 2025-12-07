@@ -3,7 +3,7 @@
 #include <shared_mutex>
 
 namespace DynamicTranslationSE {
-    using DynamicTranslationFunc = const wchar_t*(__cdecl*)(std::string);
+    using DynamicTranslationFunc = const wchar_t*(__cdecl*)(std::string_view);
     using PapyrusScriptID = std::pair<RE::FormID, std::string>; // formID, editorID
 
     struct Provider {
