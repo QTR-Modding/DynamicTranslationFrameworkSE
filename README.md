@@ -1,59 +1,35 @@
-#### YOU NEED CMAKE < 3.5 !
+## What is DynamicTranslationFrameworkSE?
 
-#### WINDOWS ENVIRONMENT VARIABLES TO SET
+A lightweight add-on that teaches Skyrim to fetch new text when a `$LocalizationStrings` key appears on screen. When the game asks for a line like `$CraftingMenu`, the framework asks your chosen provider for the right wording and shows that instead.
 
-1. **`COMMONLIB_SSE_FOLDER`**: The path to your clone of Commonlib.
-2. **`VCPKG_ROOT`**: The path to your clone of [vcpkg](https://github.com/microsoft/vcpkg).
-3. (optional) **`SKYRIM_FOLDER`**: path of your Skyrim Special Edition folder.
-4. (optional) **`SKYRIM_MODS_FOLDER`**: path of the folder where your mods are.
+It is meant for players and mod authors who want flexible in-game translations without shipping a full set of localized text files.
 
-#### THINGS TO EDIT
+## Quick setup
 
-1. CMakeLists.txt
-- **`AUTHORNAME`**
-- **`MDDNAME`**
-- (optional) Your plugin version. Default: `0.1.0.0`
-2. vcpkg.json
-- **`name`**: Your plugin's name.
-- **`version-string`**: Your plugin version. Default: `0.1.0.0`
+1. Install the SKSE plugin like any other mod.
+2. Create a folder in your Skyrim install: `Data/SKSE/Plugins/DynamicTranslationFramework/`.
+3. Drop one or more JSON files in that folder to tell the framework where to get translations. Files in subfolders are ignored.
 
-#### FEATURES
-Automatically imports:
-- [CLibUtil](https://github.com/powerof3/CLibUtil) by powerof3
-- [SKSE Menu Framework](https://www.nexusmods.com/skyrimspecialedition/mods/120352) by Thiago099
+## How the providers work
 
----
+* Each JSON file can describe one provider or a list of providers.
+* A provider declares the `$LocalizationStrings` keys it can answer and where the replacement text comes from.
+* Two source types exist:
+  * **Native SKSE plugin** – a DLL that returns the text when asked.
+  * **Papyrus form** – a form in your load order with a script that knows how to respond.
+* If both are listed, the native plugin is asked first and the Papyrus script is tried if the native call gives no answer.
 
-## JSON Configuration
+### Provider fields in plain language
 
-DynamicTranslationFrameworkSE reads provider definitions from JSON files in:
+| Field | Required | What to put here |
+|-------|----------|------------------|
+| `strings` | Yes | The list of `$LocalizationStrings` keys this provider can handle, without the `$` prefix. |
+| `skse` | No | The name of the SKSE DLL that should supply the translated text. |
+| `papyrus` | No | The Editor ID of the form whose attached Papyrus script can supply the text. Only Editor IDs are supported (numeric FormIDs do not work). |
 
-```
-Data/SKSE/Plugins/DynamicTranslationFramework/
-```
+### Examples
 
-Files are loaded from the top level of this directory (subfolders are **not** scanned).
-The parsing logic uses the [CLibUtilsQTR](https://github.com/QTR-Modding/CLibUtilsQTR)
-preset helpers that back the `Presets::Field` types in `ConfigEntryBlock`.
-
-### JSON Schema
-
-Each JSON file can contain either a single provider object or an array of provider objects.
-
-#### Fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `strings` | Array of strings | Yes | Array of translation strings without the $ prefix. |
-| `skse` | String | No | Name of the native DLL. `OnDynamicTranslationRequest` is resolved from this module. |
-| `papyrus` | String | No | Editor ID of the form that has a Papyrus script attached. The script must expose `OnDynamicTranslationRequest`. |
-
-Both native and Papyrus providers are optional, but at least one must be present. When both
-are supplied the native call is attempted first; Papyrus is used as a fallback.
-
-### Example Configuration
-
-**Single provider (object format):**
+**Single provider**
 
 ```json
 {
@@ -62,7 +38,7 @@ are supplied the native call is attempted first; Papyrus is used as a fallback.
 }
 ```
 
-**Multiple providers (array format):**
+**Multiple providers in one file**
 
 ```json
 [
@@ -76,30 +52,17 @@ are supplied the native call is attempted first; Papyrus is used as a fallback.
   }
 ]
 ```
-### Native DLL Provider
 
-For native DLL providers, the exported function must have this signature:
+### What happens in game
 
-```cpp
-extern "C" __declspec(dllexport) const wchar_t* __cdecl OnDynamicTranslationRequest(std::string_view key);
-```
+1. The framework scans `Data/SKSE/Plugins/DynamicTranslationFramework/` when the game starts.
+2. When a `$LocalizationStrings` key is about to be shown, the framework checks your providers to see who promised that key.
+3. If a match is found, it asks the native DLL first. If that does not provide text, it asks the Papyrus form by Editor ID.
+4. If a provider returns a non-empty string, that is what the player sees on screen. If nobody responds, the usual `$KeyName` appears.
 
-The loader resolves `OnDynamicTranslationRequest` automatically after loading the DLL.
-Return a wide string with the text to display, or `nullptr`/empty string to skip.
+### Friendly tips
 
-### Papyrus Provider
-
-Papyrus entries reference the **Editor ID** of a form with an attached script that exposes
-`OnDynamicTranslationRequest`. The current loader resolves Papyrus providers **only by
-Editor ID**—numeric form IDs or raw FormIDs are not supported. At runtime the framework
-looks up the form with `LookupByEditorID`, fetches the script via CLibUtilsQTR's Papyrus
-helpers, and invokes the function with the translation key. The function should return a
-non-empty string to override the translation.
-
-### Logging
-
-The configuration loader logs the following:
-- Config folder discovery
-- Each JSON file processed
-- Successfully registered providers
-- Errors for missing files, parse errors or missing functions
+* Keep your JSON files at the top level of the folder—nested folders are skipped.
+* Make sure the SKSE DLL or Papyrus form you name is installed and enabled in the load order.
+* Use clear Editor IDs for Papyrus sources; numeric FormIDs are ignored.
+* The framework reports which files it loaded and any problems it found in the SKSE log.
